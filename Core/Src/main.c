@@ -131,7 +131,7 @@ void data_ready_handler(){
 		fifo_count = get_fifo_count(&hi2c1);
 		uint8_t regv1, regv2;
 		read_from_register(&hi2c1, MPU6050_INT_STATUS_REG, regv1);
-		int a1;
+		HAL_Delay(3);
 //		read_from_register(&hi2c1, MPU6050_USER_CTRL, &regv1);
 //		read_from_register(&hi2c1, MPU6050_USER_CTRL, &regv2);
 
@@ -150,6 +150,7 @@ void data_ready_handler(){
 		pitch += delta_angle;
 
 		fifo_count = get_fifo_count(&hi2c1);
+		HAL_Delay(1);
 
 		//sprintf(buffer, "\n%d %f", gyrox_raw, pitch);  // Convert float to string
 		//HAL_UART_Transmit(&huart3, buffer, strlen(buffer), HAL_MAX_DELAY);
