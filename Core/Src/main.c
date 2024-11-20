@@ -104,7 +104,7 @@ void data_ready_handler(void);
 int16_t get_unified_data_from_fifo(I2C_HandleTypeDef *hi2c){
 	// Lowest register data is written first to the FIFO buffer by MPU6050
 	int16_t unified_data=0;
-	uint8_t buffer_data;
+	uint8_t buffer_data=0;
 	read_from_fifo(hi2c, &buffer_data); // 8 MSB of the sensor
 	unified_data |= buffer_data << 8;
 	read_from_fifo(hi2c, &buffer_data); // 8 LSB of the sensor
@@ -129,12 +129,7 @@ void data_ready_handler(){
 	fifo_count = get_fifo_count(&hi2c1);
 	while(fifo_count < 2){
 		fifo_count = get_fifo_count(&hi2c1);
-		uint8_t regv1, regv2;
-		read_from_register(&hi2c1, MPU6050_INT_STATUS_REG, regv1);
 		HAL_Delay(3);
-//		read_from_register(&hi2c1, MPU6050_USER_CTRL, &regv1);
-//		read_from_register(&hi2c1, MPU6050_USER_CTRL, &regv2);
-
 	}
 
 	/* calculate the angle */
@@ -614,7 +609,6 @@ void Error_Handler(void)
   __disable_irq();
   while (1)
   {
-	 int pp=0;
   }
   /* USER CODE END Error_Handler_Debug */
 }
