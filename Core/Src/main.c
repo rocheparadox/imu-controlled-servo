@@ -129,7 +129,7 @@ void data_ready_handler(){
 	fifo_count = get_fifo_count(&hi2c1);
 	while(fifo_count < 2){
 		fifo_count = get_fifo_count(&hi2c1);
-		HAL_Delay(3);
+		HAL_Delay(3); // Wait for sometime before the next fifo count read. If done consecutively without delay, MPU6050 freezes.
 	}
 
 	/* calculate the angle */
@@ -215,6 +215,7 @@ int main(void)
   servo.servo_pwm_timer = &htim2;
   servo.current_position = 0;
 
+  // check servo motion
   rotate_servo(&servo, 45);
   HAL_Delay(1000);
 
@@ -227,7 +228,7 @@ int main(void)
   uint8_t smplrt_div_value = 9;
   dt = ((float)(smplrt_div_value + 1))/(float)gyroscope_output_rate;
   uint8_t interrupt_enable = 0b00000001;
-  uint8_t interrupt_pin_config = 0b10000000;
+  uint8_t interrupt_pin_config = 0b10100000;
   uint8_t gyro_config = 0b00001000; // for FS_SEL
   uint8_t fifo_enable_config = 0b01000000;
   uint8_t user_control_config;
@@ -236,18 +237,16 @@ int main(void)
   write_to_power_mgmt(&hi2c1, &power_management);
   // set configuration bits for DLPF
   set_configuration(&hi2c1, &mpu6050_config);
+  // set gyroscope configuration
+  set_gyroscope_configuration(&hi2c1, &gyro_config);
   // set the sampling rate
   //set_sampling_rate(&hi2c1, sampling_rate);
   set_smplrt_div(&hi2c1, &smplrt_div_value);
-  // set interrupt enable bits
-  set_interrupt_enable(&hi2c1, &interrupt_enable);
   // set interrupt configuration bits
   set_interrupt_pin_configuration(&hi2c1, &interrupt_pin_config);
-  // set gyroscope configuration
-  set_gyroscope_configuration(&hi2c1, &gyro_config);
+  // set interrupt enable bits
+  set_interrupt_enable(&hi2c1, &interrupt_enable);
   get_interrupt_status(&hi2c1, &int_status);
-  uint8_t inter_int_status;
-  get_interrupt_status(&hi2c1, &inter_int_status);
 
   /* calibrate gyroscope */
 
@@ -293,7 +292,6 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   get_interrupt_status(&hi2c1, &int_status);
   pitch = 0.0;
-  is_data_ready = 1;
   while (1)
   {
     /* USER CODE END WHILE */
