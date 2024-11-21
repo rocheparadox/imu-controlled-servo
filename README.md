@@ -1,4 +1,4 @@
-# IMU Controller Servo
+# IMU Controlled Servo
 
 This is a research project that combines the power of Embedded Systems and Control Engineering that enables a platform to precisely follow the motion of a target platform using a combination of sensors and actuators
 
