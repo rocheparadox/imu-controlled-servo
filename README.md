@@ -1,6 +1,10 @@
 # IMU Controller Servo
 
-This is a research project that combines the power of Embedded Systems and Control Engineering that enables a platform to precisely follow the motion of a target platform using a combination of sensors and actuators
+This research project showcases the development of a sophisticated motion tracking system involving a 32-bit microcontroller (STM32H723ZGT) with ARM processor and a MEMS sensor module with gyroscope and accelerometer (MPU6050). Datasheet of the MEMS module was thoroughly studied and its registers were manipulated through I2C, to set data sampling frequency, interrupt pin configuration, FIFO buffer and gyroscope scale. A control system was designed and implemented to follow the motion of the IMU using a servo motor as an actuator.
+
+## Project Setup
+
+<img src=".readme_docs/project_setup.jpg">
 
 ## Components used
 
