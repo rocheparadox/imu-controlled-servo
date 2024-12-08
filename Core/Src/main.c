@@ -57,6 +57,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 
+I2C_HandleTypeDef *mpu6050_i2c_bus;
 I2C_HandleTypeDef hi2c1;
 
 TIM_HandleTypeDef htim2;
@@ -101,18 +102,6 @@ void data_ready_handler(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-int16_t get_unified_data_from_fifo(I2C_HandleTypeDef *hi2c){
-	// Lowest register data is written first to the FIFO buffer by MPU6050
-	int16_t unified_data=0;
-	uint8_t buffer_data=0;
-	read_from_fifo(hi2c, &buffer_data); // 8 MSB of the sensor
-	unified_data |= buffer_data << 8;
-	read_from_fifo(hi2c, &buffer_data); // 8 LSB of the sensor
-	unified_data |= buffer_data;
-
-	return unified_data;
-}
-
 void orient_servo(int pitch){
 	if(pitch < -90){
 		pitch = -90;
@@ -126,15 +115,15 @@ void orient_servo(int pitch){
 
 void data_ready_handler(){
 	is_data_ready = 0;
-	fifo_count = get_fifo_count(&hi2c1);
+	fifo_count = get_fifo_count();
 	while(fifo_count < 2){
-		fifo_count = get_fifo_count(&hi2c1);
+		fifo_count = get_fifo_count();
 		HAL_Delay(3); // Wait for sometime before the next fifo count read. If done consecutively without delay, MPU6050 freezes.
 	}
 
 	/* calculate the angle */
 	while(fifo_count != 0){
-		int16_t gyrox_raw = get_unified_data_from_fifo(&hi2c1);
+		int16_t gyrox_raw = get_unified_data_from_fifo();
 		// cancel out the offset
 		gyrox_raw -= offset;
 		// scale the data into degrees
@@ -144,7 +133,7 @@ void data_ready_handler(){
 		float delta_angle = gyrox_raw * dt;
 		pitch += delta_angle;
 
-		fifo_count = get_fifo_count(&hi2c1);
+		fifo_count = get_fifo_count();
 		HAL_Delay(1);
 
 		//sprintf(buffer, "\n%d %f", gyrox_raw, pitch);  // Convert float to string
@@ -153,15 +142,15 @@ void data_ready_handler(){
 
 	// read the interrupt status register
 	orient_servo((int)pitch);
-	get_interrupt_status(&hi2c1, &int_status);
+	get_interrupt_status(&int_status);
 
 
 //	// read the raw gyroscope values
 //    int16_t gyrox_raw; // int16_t datatype is a signed 16 bit integer which stores 2's complement values. The gyrosocope data provided by the MPU6050 is a signed 16 bit integer too.
-//    //get_gyro_x(&hi2c1, &gyrox_raw);
+//    //get_gyro_x(&hi2c, &gyrox_raw);
 //
 //	//int16_t datatype is a signed 16 bit integer which stores 2's complement values. The gyrosocope data provided by the MPU6050 is a signed 16 bit integer too.
-//	int16_t gyrox_raw = get_unified_data_from_fifo(&hi2c1);
+//	int16_t gyrox_raw = get_unified_data_from_fifo(&hi2c);
 //
 //    //sprintf(buffer, "\n%d %d", gyrox_raw, gyrox_buffer);  // Convert float to string
 //    //HAL_UART_Transmit(&huart3, buffer, strlen(buffer), HAL_MAX_DELAY);
@@ -206,7 +195,10 @@ int main(void)
   MX_I2C1_Init();
   MX_USART3_UART_Init();
   MX_TIM2_Init();
+
   /* USER CODE BEGIN 2 */
+
+  mpu6050_i2c_bus = &hi2c1;
 
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
 
@@ -234,19 +226,19 @@ int main(void)
   uint8_t user_control_config;
 
   // wake the device up, set the power management bits
-  write_to_power_mgmt(&hi2c1, &power_management);
+  write_to_power_mgmt(&power_management);
   // set configuration bits for DLPF
-  set_configuration(&hi2c1, &mpu6050_config);
+  set_configuration(&mpu6050_config);
   // set gyroscope configuration
-  set_gyroscope_configuration(&hi2c1, &gyro_config);
+  set_gyroscope_configuration(&gyro_config);
   // set the sampling rate
-  //set_sampling_rate(&hi2c1, sampling_rate);
-  set_smplrt_div(&hi2c1, &smplrt_div_value);
+  //set_sampling_rate(&hi2c, sampling_rate);
+  set_smplrt_div(&smplrt_div_value);
   // set interrupt configuration bits
-  set_interrupt_pin_configuration(&hi2c1, &interrupt_pin_config);
+  set_interrupt_pin_configuration(&interrupt_pin_config);
   // set interrupt enable bits
-  set_interrupt_enable(&hi2c1, &interrupt_enable);
-  get_interrupt_status(&hi2c1, &int_status);
+  set_interrupt_enable(&interrupt_enable);
+  get_interrupt_status(&int_status);
 
   /* calibrate gyroscope */
 
@@ -254,8 +246,8 @@ int main(void)
   // read out unwanted data.
   for(int i=0; i<10; i++){
 	  while(is_data_ready != 1);
-	  get_gyro_x(&hi2c1, &temp_gyro_x);
-	  get_interrupt_status(&hi2c1, &int_status);
+	  get_gyro_x(&temp_gyro_x);
+	  get_interrupt_status(&int_status);
 	  //sprintf(buffer, "\n%d", (int)temp_gyro_x);  // Convert integer to string
 	  //HAL_UART_Transmit(&huart3, buffer ,strlen(buffer), HAL_MAX_DELAY);
   }
@@ -264,9 +256,9 @@ int main(void)
   offset=0;
   for(int i=0; i<samples; i++){
 	  while(is_data_ready != 1);
-	  get_gyro_x(&hi2c1, &temp_gyro_x);
+	  get_gyro_x(&temp_gyro_x);
 	  offset += temp_gyro_x;
-	  get_interrupt_status(&hi2c1, &int_status);
+	  get_interrupt_status(&int_status);
       //sprintf(buffer, "\n%d", (int)temp_gyro_x);  // Convert integer to string
       //HAL_UART_Transmit(&huart3, buffer ,strlen(buffer), HAL_MAX_DELAY);
   }
@@ -276,21 +268,21 @@ int main(void)
 //  HAL_UART_Transmit(&huart3, buffer ,strlen(buffer), 1);
 
   // Enable the FIFO for gyro x and gyro y
-  set_fifo_enable(&hi2c1, &fifo_enable_config);
+  set_fifo_enable(&fifo_enable_config);
 
-  read_from_register(&hi2c1, MPU6050_USER_CTRL, &user_control_config);
+  read_from_register(MPU6050_USER_CTRL, &user_control_config);
   // Reset the FIFO in user control
   user_control_config |= (uint8_t)(1 << 2);
-  set_user_control(&hi2c1, &user_control_config);
+  set_user_control(&user_control_config);
   // Enable FIFO in User control
   user_control_config = (uint8_t)(1 << 6);
-  set_user_control(&hi2c1, &user_control_config);
+  set_user_control(&user_control_config);
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  get_interrupt_status(&hi2c1, &int_status);
+  get_interrupt_status(&int_status);
   pitch = 0.0;
   while (1)
   {

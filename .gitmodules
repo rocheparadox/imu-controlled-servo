@@ -1,0 +1,3 @@
+[submodule "mpu6050-imu-stm32"]
+	path = mpu6050-imu-stm32
+	url = https://github.com/rocheparadox/mpu6050-imu-stm32
