@@ -15,3 +15,17 @@ This research project showcases the development of a sophisticated motion tracki
 
 ## Demonstrations
 - [Single DOF IMU controlled IMU](https://www.youtube.com/watch?v=8jMRze4Yr3I)
+
+## Connections
+
+| **MPU6050 Pin** | **STM32 Pin** | **Servo Motor Pin** |
+|-----------------|---------------|----------------------|
+| SCL             | SCL           |                      |
+| SDA             | SDA           |                      |
+| INT             | PA0           |                      |
+|                 | D13           | PWM Pin              |
+
+## Nucleo Board Pinout
+
+<img src=".readme_docs/nucleo_board.png">
+
